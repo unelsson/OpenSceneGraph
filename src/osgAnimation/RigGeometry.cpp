@@ -60,6 +60,7 @@ RigGeometry::RigGeometry()
     // disable the computation of boundingbox for the rig mesh
     setComputeBoundingBoxCallback(new RigComputeBoundingBoxCallback());
     _rigTransformImplementation = new osgAnimation::RigTransformSoftware;
+    OSG_WARN << "creating empty OSG riggeometry" << std::endl;;
 
 }
 
@@ -71,6 +72,7 @@ RigGeometry::RigGeometry(const RigGeometry& b, const osg::CopyOp& copyop) :
     _vertexInfluenceMap(b._vertexInfluenceMap),
     _needToComputeMatrix(b._needToComputeMatrix)
 {
+    OSG_WARN << "creating OSG riggeometry" << std::endl;;
     _needToComputeMatrix = true;
     _matrixFromSkeletonToGeometry = _invMatrixFromSkeletonToGeometry = osg::Matrix::identity();
     // disable the computation of boundingbox for the rig mesh
@@ -160,7 +162,3 @@ void RigGeometry::copyFrom(osg::Geometry& from)
         }
     }
 }
-
-
-
-

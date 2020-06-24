@@ -272,6 +272,7 @@ bool daeReader::processDocument( const std::string& fileURI)
     osgAnimation::BasicAnimationManager* pOsgAnimationManager = processAnimationLibraries(_document);
     if (pOsgAnimationManager)
     {
+        OSG_WARN << "Made pOsgAnimationManager in daereader.cpp" << std::endl;
         _rootNode->addUpdateCallback(pOsgAnimationManager);
     }
 
@@ -385,6 +386,7 @@ osg::Group* daeReader::processVisualScene( domVisual_scene *scene )
         {
             if (osg::Node* node = processNode(node_array[i], false))
             {
+                if (!node->getName().empty()) retVal->setName(node->getName());
                 addChild(retVal, node);
             }
         }
@@ -595,12 +597,15 @@ osg::Node* daeReader::processNode( domNode *node, bool skeleton)
         if (node->getId())
         {
             name = node->getId();
+            OSG_WARN << "node has idname: " << name << std::endl;
             resultNode->setUserValue("dae_node_id", name);
         }
         if (node->getName())
+        {
             name = node->getName();
+        }
         resultNode->setName( name );
-    }
+    } else OSG_WARN << "Nodename: " << resultNode->getName() << std::endl;
 
     osg::Group* attachTo = resultNode;
 

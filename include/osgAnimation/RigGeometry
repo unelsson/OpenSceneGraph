@@ -135,8 +135,16 @@ namespace osgAnimation
             if(!geom->getSkeleton() && !geom->getParents().empty())
             {
                 RigGeometry::FindNearestParentSkeleton finder;
+                osg::notify(osg::WARN) << "RG geom->getParents().size() " << geom->getParents().size() << std::endl;
+                osg::notify(osg::WARN) << "RG geom->getName() " << geom->getName() << std::endl;
                 if(geom->getParents().size() > 1)
+                {
                     osg::notify(osg::WARN) << "A RigGeometry should not have multi parent ( " << geom->getName() << " )" << std::endl;
+                    for (int i=0;i<geom->getParents().size();i++)
+                    {
+                        osg::notify(osg::WARN) << "parentnum " << i << " name: " << geom->getParent(i)->getName() << std::endl;
+                    }
+                } else osg::notify(osg::WARN) << "only parent name: " << geom->getParent(0)->getName() << std::endl;
                 geom->getParents()[0]->accept(finder);
 
                 if(!finder._root.valid())

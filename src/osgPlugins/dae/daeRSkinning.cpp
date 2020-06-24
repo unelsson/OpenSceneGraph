@@ -110,15 +110,19 @@ void daeReader::processSkins()
     for (size_t i = 0; i < _skinInstanceControllers.size(); ++i)
     {
         domInstance_controller* pDomInstanceController = _skinInstanceControllers[i];
+        OSG_WARN << "daeReader::processSkins() round " << i << std::endl;
 
         const domInstance_controller::domSkeleton_Array& pDomSkeletons =
             pDomInstanceController->getSkeleton_array();
+
+        OSG_WARN << "daeReader::processSkins() domskeltons getcount: " << pDomSkeletons.getCount() << std::endl;
 
         if (pDomSkeletons.getCount() == 0)
         {
             domNode* skelNode = findSkeletonNode(_skeletonMap.begin()->first, pDomInstanceController);
             if (skelNode)
             {
+                    OSG_WARN << "daeReader::processSkins() a skelnodename: " << skelNode->getAttributeName(0) << std::endl;
                 skelSkinMap[skelNode].push_back(pDomInstanceController);
             }
         }
@@ -128,6 +132,11 @@ void daeReader::processSkins()
             {
                 if (domNode* skelNode = findSkeletonNode(pDaeElement, pDomInstanceController))
                 {
+                    unsigned int numAttrs = skelNode->getAttributeCount();
+                    for ( unsigned int currAttr = 0; currAttr < numAttrs; ++currAttr )
+                    {
+                        OSG_WARN << "daeReader::processSkins() b skelnodename: " << skelNode->getAttributeName(currAttr) << " : "<< skelNode->getAttribute( currAttr ) << std::endl;
+                    }
                     skelSkinMap[skelNode].push_back(pDomInstanceController);
                 }
             }
@@ -252,10 +261,24 @@ void daeReader::processSkeletonSkins(domNode* skeletonRoot, const domInstance_co
         {
             osgAnimation::Bone* pOsgBone = getOrCreateBone(jointsAndInverseBindMatrices[j].first);
             pOsgBone->setInvBindMatrixInSkeletonSpace(jointsAndInverseBindMatrices[j].second);
+
+            unsigned int numAttrs = jointsAndInverseBindMatrices[j].first->getAttributeCount();
+            for ( unsigned int currAttr = 0; currAttr < numAttrs; ++currAttr )
+            {
+                OSG_WARN  << " bone, bone name, daename: " << jointsAndInverseBindMatrices[j].first->getAttributeName(currAttr) << " : "<< jointsAndInverseBindMatrices[j].first->getAttribute( currAttr ) << std::endl;
+                if (jointsAndInverseBindMatrices[j].first->getAttributeName(currAttr) == "name") pOsgBone->setName(jointsAndInverseBindMatrices[j].first->getAttribute( currAttr ));
+            }
         }
     }
 
     osgAnimation::Skeleton* skeleton = getOrCreateSkeleton(skeletonRoot);
+
+    unsigned int numAttrs = skeletonRoot->getAttributeCount();
+    for ( unsigned int currAttr = 0; currAttr < numAttrs; ++currAttr )
+    {
+        OSG_WARN  << " skel, skel name, daename: " << skeletonRoot->getAttributeName(currAttr) << " : "<< skeletonRoot->getAttribute( currAttr ) << std::endl;
+        if (skeletonRoot->getAttributeName(currAttr) == "name") skeleton->setName(skeletonRoot->getAttribute( currAttr ));
+    }
 
     for (size_t i = 0; i < instanceControllers.size(); ++i)
     {
@@ -318,6 +341,15 @@ void daeReader::processSkin(domSkin* pDomSkin, domNode* skeletonRoot, osgAnimati
 
     osg::Geode* pOsgRigGeode = new osg::Geode;
     pOsgRigGeode->setDataVariance(osg::Object::DYNAMIC);
+    pOsgRigGeode->setName("defaultRigName");
+
+    OSG_WARN << "processing skin, OSGskeleton name: " << pOsgSkeleton->getName() << std::endl;
+    /*unsigned int numAttrs = skeletonRoot->getAttributeCount();
+    for ( unsigned int currAttr = 0; currAttr < numAttrs; ++currAttr )
+    {
+        OSG_WARN  << " skeleton name, daename: " << skeletonRoot->getAttributeName(currAttr) << " : "<< skeletonRoot->getAttribute( currAttr ) << std::endl;
+        if (skeletonRoot->getAttributeName(currAttr) == "name") pOsgSkeleton->setName(skeletonRoot->getAttribute( currAttr ));
+    }*/
 
     typedef std::map<const osg::Geometry*, osgAnimation::RigGeometry*> GeometryRigGeometryMap;
     GeometryRigGeometryMap old2newGeometryMap;
@@ -335,9 +367,11 @@ void daeReader::processSkin(domSkin* pDomSkin, domNode* skeletonRoot, osgAnimati
             pOsgRigGeometry->setDataVariance(osg::Object::DYNAMIC);
             pOsgRigGeometry->setUseDisplayList( false );
             pOsgRigGeode->addDrawable(pOsgRigGeometry);
+            OSG_WARN << "processing riggeometry named: " << pOsgRigGeode->getName() << std::endl;
         }
         else
         {
+            OSG_WARN << "dynamiccastfail getdrawbleriggeo" << std::endl;
             pOsgRigGeode->addDrawable(pOsgGeode->getDrawable(i));
         }
     }
@@ -358,7 +392,10 @@ void daeReader::processSkin(domSkin* pDomSkin, domNode* skeletonRoot, osgAnimati
         {
             osgAnimation::RigGeometry* pOsgRigGeometry = dynamic_cast<osgAnimation::RigGeometry*>(pOsgRigGeode->getDrawable(d));
             if (!pOsgRigGeometry)
+            {
+                OSG_NOTIFY(osg::WARN) << "This is not pOsgRigGeometry." << std::endl;
                 continue;
+            }
 
             osg::Array * vert = pOsgRigGeometry->getVertexArray();
             osg::Vec3Array * vertf = NULL;
@@ -474,6 +511,7 @@ void daeReader::processSkin(domSkin* pDomSkin, domNode* skeletonRoot, osgAnimati
             osgAnimation::Bone* pOsgBone = _jointMap[daeSafeCast<domNode>(resolver.getElement())].get();
             if (pOsgBone)
             {
+                OSG_WARN << "processing bone..." << pOsgBone->getName();
                 jointNames.push_back(pOsgBone->getName());
             }
             else

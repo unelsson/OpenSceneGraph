@@ -14,6 +14,8 @@
 #include "daeReader.h"
 #include "ReaderWriterDAE.h"
 
+#include <iostream>
+
 #include <dae.h>
 #include <dae/daeSIDResolver.h>
 #include <dae/domAny.h>
@@ -211,7 +213,8 @@ void    daeReader::processMaterial(osg::StateSet *ss, domMaterial *mat )
     }
     if (mat->getName()) {
         ss->setName(mat->getName());
-    }
+        OSG_WARN << "Material has name " << mat->getName() << std::endl;
+    } else OSG_WARN << "Material has no name!" << std::endl;
     _currentInstance_effect = mat->getInstance_effect();
     if (!_currentInstance_effect)
     {
@@ -365,6 +368,7 @@ void daeReader::processProfileCOMMON(osg::StateSet *ss, domProfile_COMMON *pc )
                 ss->setTextureMode( textureUnit, GL_TEXTURE_2D, GL_TRUE );
                 ss->setTextureAttribute( textureUnit, new osg::TexEnv(osg::TexEnv::MODULATE) );
                 ss->setTextureAttribute( textureUnit, DiffuseStateAttribute );
+                OSG_WARN << "set diffuse opt 1 " << std::endl;
             }
             else
             {
@@ -372,10 +376,12 @@ void daeReader::processProfileCOMMON(osg::StateSet *ss, domProfile_COMMON *pc )
                 // plus any constant ambient contribution after the lighting calculation. This means that I am modulating the the
                 // ambient with the texture as well but I cannot see a way of avoiding that.
                 mat->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4( 1.0f, 1.0f, 1.0f, 1.0f ) );
+                OSG_WARN << "usePredefinedTextureUnits is " << _pluginOptions.usePredefinedTextureUnits << std::endl;
                 unsigned int textureUnit( _pluginOptions.usePredefinedTextureUnits ? MAIN_TEXTURE_UNIT : 0);
                 ss->setTextureMode( textureUnit, GL_TEXTURE_2D, GL_TRUE );
                 ss->setTextureAttribute( textureUnit, new osg::TexEnv(osg::TexEnv::MODULATE) );
                 ss->setTextureAttribute( textureUnit, DiffuseStateAttribute );
+                OSG_WARN << "set diffuse opt 2 " << std::endl;
             }
         }
         else
@@ -658,6 +664,7 @@ bool daeReader::processColorOrTextureType(const osg::StateSet* ss,
     }
     else if (channel == osg::Material::DIFFUSE )
     {
+        std::cout << "recog diffuse" << std::endl;
         if (cot->getColor() != NULL)
         {
             domFloat4 &f4 = cot->getColor()->getValue();
@@ -667,7 +674,11 @@ bool daeReader::processColorOrTextureType(const osg::StateSet* ss,
         else if (cot->getTexture() != NULL)
         {
             if (sa != NULL)
+            {
+                std::cout << "Loading diffuse texture main" << std::endl;
+
                 *sa = processTexture( cot->getTexture(), ss, MAIN_TEXTURE_UNIT);
+            }
             else
             {
                 OSG_WARN << "Currently no support for <texture> in Diffuse channel " << std::endl;
@@ -901,7 +912,9 @@ std::string daeReader::processImagePath(const domImage* pDomImage) const
         {
             std::string path = pDomImage->getInit_from()->getValue().pathDir() +
                 pDomImage->getInit_from()->getValue().pathFile();
+            std::cout << "image path: "<< path << std::endl;
             path = ReaderWriterDAE::ConvertColladaCompatibleURIToFilePath(path);
+            std::cout << "uripath: "<< path << std::endl;
             if (path.empty())
             {
                 OSG_WARN << "Unable to get path from URI." << std::endl;
