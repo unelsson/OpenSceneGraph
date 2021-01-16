@@ -119,7 +119,7 @@ bool daeReader::findInvertTransparency(daeDatabase* database) const
 //        id
 //        name
 //        type
-void daeReader::processBindMaterial( domBind_material *bm, domGeometry *geom, osg::Geode *geode, osg::Geode *cachedGeode )
+void daeReader::processBindMaterial( domBind_material *bm, domGeometry *geom, osg::Group *geometryGroup, osg::Group *cachedGeometryGroup )
 {
     if (bm->getTechnique_common() == NULL )
     {
@@ -127,11 +127,11 @@ void daeReader::processBindMaterial( domBind_material *bm, domGeometry *geom, os
         return;
     }
 
-    for (size_t i =0; i < geode->getNumDrawables(); i++)
+    for (size_t i =0; i < geometryGroup->getNumChildren(); i++)
     {
-        osg::Drawable* drawable = geode->getDrawable(i);
+        osg::Drawable* drawable = geometryGroup->getChild(i)->asGeometry();
         std::string materialName = drawable->getName();
-        osg::Geometry *cachedGeometry = dynamic_cast<osg::Geometry*>(cachedGeode->getDrawable(i)->asGeometry());
+        osg::Geometry *cachedGeometry = dynamic_cast<osg::Geometry*>(cachedGeometryGroup->getChild(i)->asGeometry());
 
         domInstance_material_Array &ima = bm->getTechnique_common()->getInstance_material_array();
         std::string symbol;
@@ -897,27 +897,20 @@ std::string daeReader::processImagePath(const domImage* pDomImage) const
     if (pDomImage->getInit_from())
     {
         pDomImage->getInit_from()->getValue().validate();
-        if (strcmp(pDomImage->getInit_from()->getValue().getProtocol(), "file") == 0)
+        std::string path = pDomImage->getInit_from()->getValue().pathDir() +
+            pDomImage->getInit_from()->getValue().pathFile();
+        path = ReaderWriterDAE::ConvertColladaCompatibleURIToFilePath(path);
+        if (path.empty())
         {
-            std::string path = pDomImage->getInit_from()->getValue().pathDir() +
-                pDomImage->getInit_from()->getValue().pathFile();
-            path = ReaderWriterDAE::ConvertColladaCompatibleURIToFilePath(path);
-            if (path.empty())
-            {
-                OSG_WARN << "Unable to get path from URI." << std::endl;
-                return std::string();
-            }
+            OSG_WARN << "Unable to get path from URI." << std::endl;
+            return std::string();
+        }
 #ifdef WIN32
-            // If the path has a drive specifier or a UNC name then strip the leading /
-            if (path.size() > 2 && (path[2] == ':' || (path[1] == '/' && path[2] == '/')))
-                return path.substr(1, std::string::npos);
+        // If the path has a drive specifier or a UNC name then strip the leading /
+        if (path.size() > 2 && (path[2] == ':' || (path[1] == '/' && path[2] == '/')))
+            return path.substr(1, std::string::npos);
 #endif
-            return path;
-        }
-        else
-        {
-            OSG_WARN << "Only images with a \"file\" scheme URI are supported in this version." << std::endl;
-        }
+        return path;
     }
     else
     {
